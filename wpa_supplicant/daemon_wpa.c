@@ -14,6 +14,7 @@
 #include <dirent.h>
 #endif /* CONFIG_CTRL_IFACE_UNIX */
 
+#include <string.h>
 #include "common/wpa_ctrl.h"
 #include "utils/common.h"
 #include "utils/eloop.h"
@@ -392,9 +393,33 @@ static void wpa_cli_close_connection(void)
 // set flags here for doing stuff
 static void wpa_cli_msg_cb(char *msg, size_t len)
 {
-	printf("%s\n", msg);
+	// printf("Callback msg %s\n", msg);
+	int i;
+	for (i = 0; msg[i] != '\0'; i++) {
+		if (msg[i] == ' ') {
+			break;
+		}
+	}
+	char event_name[128];
+	memcpy(event_name, &msg[4], i-1);
+	printf("Event name: %s\n", event_name);
 }
 
+
+static void daemon_process_event(char* msg)
+{
+	int i;
+	char event_name[128];
+	int offset = 3;
+	for (i = offset; msg[i] != '\0'; i++) {
+		if (msg[i] == ' ') {
+			break;
+		}
+		event_name[i-offset] = msg[i];
+	}
+	event_name[i-offset] = '\0';
+	printf("Event name: %s\n", event_name);
+}
 
 static int _wpa_ctrl_command(struct wpa_ctrl *ctrl, char *cmd, int print)
 {
@@ -3566,13 +3591,15 @@ static int check_terminating(const char *msg)
 	return 0;
 }
 
-
+// check this code
+// yup, do processing here!
 static void wpa_cli_recv_pending(struct wpa_ctrl *ctrl, int action_monitor)
 {
 	if (ctrl_conn == NULL) {
 		wpa_cli_reconnect();
 		return;
 	}
+	// printf("Handling new messagehere!!!!");
 	while (wpa_ctrl_pending(ctrl) > 0) {
 		char buf[4096];
 		size_t len = sizeof(buf) - 1;
@@ -3585,6 +3612,7 @@ static void wpa_cli_recv_pending(struct wpa_ctrl *ctrl, int action_monitor)
 				if (wpa_cli_show_event(buf)) {
 					edit_clear_line();
 					printf("\r%s\n", buf);
+					daemon_process_event(buf);
 					edit_redraw();
 				}
 
