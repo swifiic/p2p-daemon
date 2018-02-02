@@ -479,10 +479,15 @@ void state_action(char* msg) {
 			mac_addr[i-s1] = msg[i];
 		}
 		mac_addr[i-s1] = '\0';
-		char command[80];
-		sprintf(command, "p2p_connect %s pbc display", mac_addr);
-		do_command(command);
-		curr_state = CONNECTION_WAITING;
+		if (strcmp(mac_addr, "ac:2b:6e:70:94:42")==0 || strcmp(mac_addr, "44:85:00:15:ff:a1")==0) {
+			printf("\n%s\n", "MAC MATCH!");
+			char command[80];
+			sprintf(command, "p2p_connect %s pbc display", mac_addr);
+			do_command(command);
+			curr_state = CONNECTION_WAITING;
+		} else {
+			printf("\n%s\n", "noMAC MATCH!");
+		}
 	} else if (curr_state == RETRY) {
 		do_command("p2p_find");
 	}
