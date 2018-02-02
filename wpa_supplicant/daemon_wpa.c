@@ -15,6 +15,7 @@
 #endif /* CONFIG_CTRL_IFACE_UNIX */
 
 #include <string.h>
+#include "whitelisted_mac.h"
 #include "common/wpa_ctrl.h"
 #include "utils/common.h"
 #include "utils/eloop.h"
@@ -451,6 +452,7 @@ static void daemon_process_event(char* msg)
 	} else {
 		curr_state = NO_STATE;
 	}
+	// add case for p2p device lost when the lost device is connected
 	printf("Event name: %s flag val %d\n", event_name, curr_state);
 	state_action(msg);
 }
@@ -479,7 +481,14 @@ void state_action(char* msg) {
 			mac_addr[i-s1] = msg[i];
 		}
 		mac_addr[i-s1] = '\0';
-		if (strcmp(mac_addr, "ac:2b:6e:70:94:42")==0 || strcmp(mac_addr, "44:85:00:15:ff:a1")==0) {
+		int match = 0;
+		for (i = 0; i < whitelisted_count; i++) {
+			if (strcmp(mac_addr, whitelist_macs[i])==0) {
+				match = 1;
+				break;
+			}	
+		}
+		if (match) {
 			printf("\n%s\n", "MAC MATCH!");
 			char command[80];
 			sprintf(command, "p2p_connect %s pbc display", mac_addr);
@@ -490,6 +499,27 @@ void state_action(char* msg) {
 		}
 	} else if (curr_state == RETRY) {
 		do_command("p2p_find");
+	} else if (curr_state == P2P_CONNECTED) {
+		char *token, *device, *p2p_role;
+		token = strtok(msg, " "); // we discard this
+		device = strtok(NULL, " "); //nw device
+		p2p_role = strtok(NULL, " "); //go or client
+		printf("\nDETAILS: %s %s %s\n", token, device, p2p_role);
+		char ifconfig_cmd[80];
+		if (strcmp(p2p_role, "GO") == 0) {
+			//assign ip addr here - 192.168.2.1
+			printf("go");
+			sprintf(ifconfig_cmd, "ifconfig %s %s up", device, "192.168.2.1");
+		} else {
+			//assign other ip here - 192.168.2.2
+			sprintf(ifconfig_cmd, "ifconfig %s %s up", device, "192.168.2.2");
+			printf("client");
+		}
+		// system calls and lightening!
+		// very very frightening me!
+		if(system(ifconfig_cmd)==-1) {
+			printf("\nSOMETHING awful!\n");
+		}
 	}
 }
 
