@@ -405,7 +405,7 @@ static void wpa_cli_msg_cb(char *msg, size_t len)
 	printf("Event name: %s\n", event_name);
 }
 
-
+enum state {FIND_MODE, CONNECTION_INTENT, GO_NEG, AP_CONNECTED, AP_DISCONNECTED, IDLE} curr_state;
 static void daemon_process_event(char* msg)
 {
 	int i;
@@ -418,7 +418,13 @@ static void daemon_process_event(char* msg)
 		event_name[i-offset] = msg[i];
 	}
 	event_name[i-offset] = '\0';
-	printf("Event name: %s\n", event_name);
+	curr_state = IDLE;
+	int flag = 0;
+	if (strcmp(event_name, "CTRL-EVENT-SCAN-STARTED")==0) {
+		printf("\n%s\n", "FIND event detected!");
+		curr_state = FIND_MODE;
+	}
+	printf("Event name: %s flag val %d\n", event_name, curr_state);
 }
 
 static int _wpa_ctrl_command(struct wpa_ctrl *ctrl, char *cmd, int print)
