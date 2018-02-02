@@ -404,17 +404,21 @@ static void wpa_cli_msg_cb(char *msg, size_t len)
 	memcpy(event_name, &msg[4], i-1);
 	printf("Event name: %s\n", event_name);
 }
-
+void do_command(char *cmd);
 typedef enum {
 	FIND_MODE, 
-	CONNECTION_INTENT, 
-	GO_NEG_COMPLETE, 
+	CONNECTION_INTENT,
+	CONNECTION_WAITING, 
+	GO_NEG_COMPLETE,
 	P2P_CONNECTED, 
 	AP_CONNECTED, 
 	AP_DISCONNECTED, 
-	IDLE
+	IDLE,
+	RETRY,
+	NO_STATE
 } state;
 state curr_state;
+void state_action(char* msg);
 static void daemon_process_event(char* msg)
 {
 	int i;
@@ -427,23 +431,25 @@ static void daemon_process_event(char* msg)
 		event_name[i-offset] = msg[i];
 	}
 	event_name[i-offset] = '\0';
-	curr_state = IDLE;
+	// curr_state = IDLE;
 	int flag = 0;
 	if (strcmp(event_name, "CTRL-EVENT-SCAN-STARTED")==0) {
 		printf("\n%s\n", "FIND event detected!");
-		curr_state = FIND_MODE;
+		// curr_state = FIND_MODE;
 	} else if (strcmp(event_name, "P2P-DEVICE-FOUND")==0) {
 		printf("\n%s\n", "Starting connection");
-		curr_state = CONNECTION_INTENT;
-	} else if (strcmp(event_name, "P2P-GO-NEG-SUCCESS")==0) [
+		curr_state = (curr_state == CONNECTION_WAITING) ? CONNECTION_WAITING : CONNECTION_INTENT;
+	} else if (strcmp(event_name, "P2P-GO-NEG-SUCCESS")==0) {
 		printf("\n%s\n", "Neg completed");
 		curr_state = GO_NEG_COMPLETE;
 	} else if (strcmp(event_name, "P2P-GROUP-STARTED")==0) {
 		printf("\n%s\n", "Connected :)");
 		curr_state = P2P_CONNECTED;
-	} else if (strcmp(event_name, "AP-STA-DISCONNECTED")==0) {
+	} else if (strcmp(event_name, "AP-STA-DISCONNECTED")==0 || strcmp(event_name, "P2P-GROUP-REMOVED") ==0) {
 		printf("\n%s\n", "ap disconn");
-		curr_state = IDLE;
+		curr_state = RETRY;
+	} else {
+		curr_state = NO_STATE;
 	}
 	printf("Event name: %s flag val %d\n", event_name, curr_state);
 	state_action(msg);
@@ -451,10 +457,10 @@ static void daemon_process_event(char* msg)
 
 void state_action(char* msg) {
 	if (curr_state == IDLE) {
-		do_command("p2p_stop_find");
-		do_command("p2p_find");
+		// do_command("p2p_stop_find");
+		// do_command("p2p_find");
 		curr_state = FIND_MODE;
-	} else if (curr_mode == CONNECTION_INTENT) {
+	} else if (curr_state == CONNECTION_INTENT) {
 		int s1=-1, s2=-1;
 		int i;
 		char mac_addr[80];
@@ -473,6 +479,12 @@ void state_action(char* msg) {
 			mac_addr[i-s1] = msg[i];
 		}
 		mac_addr[i-s1] = '\0';
+		char command[80];
+		sprintf(command, "p2p_connect %s pbc display", mac_addr);
+		do_command(command);
+		curr_state = CONNECTION_WAITING;
+	} else if (curr_state == RETRY) {
+		do_command("p2p_find");
 	}
 }
 
@@ -3858,7 +3870,7 @@ static void update_ifnames(struct wpa_ctrl *ctrl)
 	}
 }
 
-static void do_command(char *cmd)
+void do_command(char *cmd)
 {
 	char *argv[max_args];
 	int argc;
