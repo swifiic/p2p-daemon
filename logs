@@ -12,3 +12,12 @@ P2P-DEVICE-FOUND
 P2P-GO-NEG-REQUEST
 
 sudo ifconfig p2p-wlp3s0-0 192.168.2.1 up
+
+
+------------------------------------------------------------
+Client connecting to 192.168.2.2, TCP port 5001
+TCP window size: 85.0 KByte (default)
+------------------------------------------------------------
+[  3] local 192.168.2.1 port 53208 connected with 192.168.2.2 port 5001
+[ ID] Interval       Transfer     Bandwidth
+[  3]  0.0-10.0 sec  39.0 MBytes  32.7 Mbits/sec

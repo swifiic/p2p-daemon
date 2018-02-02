@@ -519,6 +519,8 @@ void state_action(char* msg) {
 		// very very frightening me!
 		if(system(ifconfig_cmd)==-1) {
 			printf("\nSOMETHING awful!\n");
+		} else {
+			printf("\nI guess it worked?\n");
 		}
 	}
 }
