@@ -1,0 +1,14 @@
+P2P-DEVICE-FOUND
+
+<3>P2P-DEVICE-FOUND ac:2b:6e:70:94:42 p2p_dev_addr=ac:2b:6e:70:94:42 pri_dev_type=0-00000000-0 name='' config_methods=0x1108 dev_capab=0x25 group_capab=0x0 new=1
+
+<3>P2P-GO-NEG-SUCCESS role=GO freq=2412 ht40=0 peer_dev=ac:2b:6e:70:94:42 peer_iface=ac:2b:6e:70:94:43 wps_method=PBC
+
+<3>P2P-GROUP-FORMATION-SUCCESS 
+
+<3>P2P-GROUP-STARTED p2p-wlp3s0-0 GO ssid="DIRECT-7H" freq=2412 passphrase="lxyM1Ctl" go_dev_addr=44:85:00:15:ff:a0
+
+<3>AP-STA-CONNECTED ac:2b:6e:70:94:43 p2p_dev_addr=ac:2b:6e:70:94:42
+P2P-GO-NEG-REQUEST
+
+sudo ifconfig p2p-wlp3s0-0 192.168.2.1 up
