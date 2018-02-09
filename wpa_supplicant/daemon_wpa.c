@@ -436,7 +436,8 @@ static void daemon_process_event(char* msg)
 	int flag = 0;
 	if (strcmp(event_name, "CTRL-EVENT-SCAN-STARTED")==0) {
 		printf("\n%s\n", "FIND event detected!");
-		// curr_state = FIND_MODE;
+
+		curr_state = CONNECTION_INTENT;
 	} else if (strcmp(event_name, "P2P-DEVICE-FOUND")==0) {
 		printf("\n%s\n", "Starting connection");
 		curr_state = (curr_state == CONNECTION_WAITING) ? CONNECTION_WAITING : CONNECTION_INTENT;
@@ -463,37 +464,44 @@ void state_action(char* msg) {
 		// do_command("p2p_find");
 		curr_state = FIND_MODE;
 	} else if (curr_state == CONNECTION_INTENT) {
-		int s1=-1, s2=-1;
+		// int s1=-1, s2=-1;
+		// int i;
+		// char mac_addr[80];
+		// for (i = 0; msg[i] != '\0'; i++) {
+		// 	if (msg[i] == ' ') {
+		// 		if (s1 == -1) {
+		// 			s1 = i+1;
+		// 		} else {
+		// 			s2 = i;
+		// 			break;
+		// 		}
+		// 	}
+		// }
+		// for (i = s1; i < s2; i++) {
+		// 	mac_addr[i-s1] = msg[i];
+		// }
+		// mac_addr[i-s1] = '\0';
+		int j;
+		int match = 0;
 		int i;
-		char mac_addr[80];
-		for (i = 0; msg[i] != '\0'; i++) {
-			if (msg[i] == ' ') {
-				if (s1 == -1) {
-					s1 = i+1;
-				} else {
-					s2 = i;
-					break;
-				}
+		char** peers = cli_txt_list_array(&p2p_peers);
+		for (i = 0; peers[i] != NULL; i++) {
+			printf("peer %d is %s", i, peers[i]);
+			for (j = 0; j < whitelisted_count; j++) {
+				if (strcmp(peers[i], whitelist_macs[j])==0) {
+					match = 1;
+					printf("\n%s\n", "MAC MATCH!");
+					char command[80];
+					sprintf(command, "p2p_connect %s pbc display", peers[i]);
+					do_command(command);
+					curr_state = CONNECTION_WAITING;
+					// break;
+				}	
 			}
 		}
 
-		for (i = s1; i < s2; i++) {
-			mac_addr[i-s1] = msg[i];
-		}
-		mac_addr[i-s1] = '\0';
-		int match = 0;
-		for (i = 0; i < whitelisted_count; i++) {
-			if (strcmp(mac_addr, whitelist_macs[i])==0) {
-				match = 1;
-				break;
-			}	
-		}
 		if (match) {
-			printf("\n%s\n", "MAC MATCH!");
-			char command[80];
-			sprintf(command, "p2p_connect %s pbc display", mac_addr);
-			do_command(command);
-			curr_state = CONNECTION_WAITING;
+			printf("\n%s\n","connecting");
 		} else {
 			printf("\n%s\n", "noMAC MATCH!");
 		}
