@@ -498,7 +498,9 @@ void state_action(char* msg) {
 			printf("\n%s\n", "noMAC MATCH!");
 		}
 	} else if (curr_state == RETRY) {
-		kill(dtnd_pid, SIGKILL);
+		if (dtnd_pid > 0) {
+			kill(dtnd_pid, SIGKILL);
+		}
 		do_command("p2p_find");
 	} else if (curr_state == P2P_CONNECTED) {
 		char *token, *device, *p2p_role;
