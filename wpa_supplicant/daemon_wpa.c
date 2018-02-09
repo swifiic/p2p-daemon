@@ -456,7 +456,7 @@ static void daemon_process_event(char* msg)
 	printf("Event name: %s flag val %d\n", event_name, curr_state);
 	state_action(msg);
 }
-
+static pid_t dtnd_pid;
 void state_action(char* msg) {
 	if (curr_state == IDLE) {
 		// do_command("p2p_stop_find");
@@ -498,6 +498,7 @@ void state_action(char* msg) {
 			printf("\n%s\n", "noMAC MATCH!");
 		}
 	} else if (curr_state == RETRY) {
+		kill(dtnd_pid, SIGKILL);
 		do_command("p2p_find");
 	} else if (curr_state == P2P_CONNECTED) {
 		char *token, *device, *p2p_role;
@@ -515,12 +516,18 @@ void state_action(char* msg) {
 			sprintf(ifconfig_cmd, "ifconfig %s %s up", device, "192.168.2.2");
 			printf("client");
 		}
-		// system calls and lightening!
+		// system calls and lightning!
 		// very very frightening me!
 		if(system(ifconfig_cmd)==-1) {
 			printf("\nSOMETHING awful!\n");
 		} else {
 			printf("\nI guess it worked?\n");
+		}
+		// now we can start dtnd
+		dtnd_pid = fork();
+		if (dtnd_pid == 0) {
+			//launch as child process 
+			execlp("dtnd", "dtnd", "-c", "/etc/ibrdtn/ibrdtnd.conf", "-i", device, NULL);
 		}
 	}
 }
